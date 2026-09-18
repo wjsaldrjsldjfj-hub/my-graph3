@@ -40,12 +40,40 @@ st.text_input("이 그래프로 알 수 있는 것", key="note1")
 st.divider()
 # 앞으로 그래프를 계속 추가할 구역
 st.header("2. (다음 그래프를 여기에 추가)")
-# ── 그래프 2. 장르 안의 영화 (트리맵) ──
+# ─────────────────────────────────────
+# 그래프 2. 장르 안의 영화 (트리맵)
+# ─────────────────────────────────────
 st.header("2. 장르 안의 영화 (트리맵)")
-fig2 = px.treemap(df, path=["장르", "movieNm"], values="total_audi",
-                  hover_data=["total_audi"])
+
+# 같은 장르와 영화가 여러 행에 있을 수 있으므로 먼저 합치기
+treemap_df = (
+    df.groupby(["장르", "movieNm"], as_index=False)["total_audi"]
+    .sum()
+)
+
+# 장르 이름과 영화 이름이 트리맵에서 충돌하지 않도록
+# 영화 표시 이름을 별도로 만듦
+treemap_df["영화"] = treemap_df["movieNm"] + " (영화)"
+
+fig2 = px.treemap(
+    treemap_df,
+    path=["장르", "영화"],
+    values="total_audi",
+    hover_data=["movieNm"]
+)
+
+fig2.update_traces(
+    hovertemplate=(
+        "장르: %{parent}<br>"
+        "영화: %{customdata[0]}<br>"
+        "총 관객: %{value:,}명"
+        "<extra></extra>"
+    )
+)
+
 st.plotly_chart(fig2, width="stretch")
-st.caption("이 그래프로 알 수 있는 것: (한 문장으로 적어 보세요)")
+
+st.caption("이 그래프로 알 수 있는 것: (한 문장으로 적어 보세요.)")
 # ── 그래프 3. 총 관객의 분포 (히스토그램) ──
 st.header("3. 총 관객의 분포 (히스토그램)")
 fig3 = px.histogram(df, x="total_audi", nbins=40)
